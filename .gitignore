@@ -1,6 +1,59 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
-uploads/*
-!uploads/.gitkeep
+.env.*
+!.env.example
+
+# Logs
+logs/
 *.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.pid.lock
+
+# Coverage & testing
+coverage/
+*.lcov
+.nyc_output/
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# Firebase credentials
+api/config/firebase-google.json
+
+# Temp upload directory (multer)
+temp/
+
+# Generated exports
+exports/
+
+# PM2
+ecosystem.config.js
+.pm2/
+
+# Build artifacts
+build/
+dist/
+
+# Optional caches
+.npm
+.eslintcache
+*.tsbuildinfo
+
+# Import scripts data
+import-scripts/*
