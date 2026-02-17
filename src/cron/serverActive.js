@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const axios = require('axios');
 
-const renderServerUrl = 'https://delivery-server.onrender.com/';
+const renderServerUrl = 'https://del-server.onrender.com/';
 // const renderServerUrl = 'https://rapsap-api.onrender.com/';
 
 // Function to ping the server
