@@ -1,0 +1,89 @@
+### DeliveryTrack API Test File
+### Use with REST Client extension in VS Code or similar tools
+
+@baseUrl = http://localhost:5000
+@token = YOUR_TOKEN_HERE
+
+### Health Check
+GET {{baseUrl}}/health
+
+### 1. Login as Admin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@delivery.com",
+  "password": "admin123"
+}
+
+### 2. Login as Staff
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ramesh@delivery.com",
+  "password": "staff123"
+}
+
+### 3. Get All Deliveries (requires token)
+GET {{baseUrl}}/api/deliveries
+Authorization: Bearer {{token}}
+
+### 4. Get Deliveries - Unpaid Only
+GET {{baseUrl}}/api/deliveries?status=unpaid
+Authorization: Bearer {{token}}
+
+### 5. Get Deliveries - By Staff (Admin only)
+GET {{baseUrl}}/api/deliveries?staff_id=2
+Authorization: Bearer {{token}}
+
+### 6. Create Delivery
+POST {{baseUrl}}/api/deliveries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "building_name": "Green Valley Apartments",
+  "room_no": "A-101",
+  "customer_name": "Rajesh Kumar",
+  "customer_phone": "9876543210",
+  "amount": 450.00,
+  "description": "Diabetes medicine pack"
+}
+
+### 7. Get Single Delivery
+GET {{baseUrl}}/api/deliveries/1
+Authorization: Bearer {{token}}
+
+### 8. Mark Delivery as Paid
+PATCH {{baseUrl}}/api/deliveries/1/pay
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "payment_mode": "cash",
+  "note": "Collected in cash"
+}
+
+### 9. Get All Staff (Admin only)
+GET {{baseUrl}}/api/staff
+Authorization: Bearer {{token}}
+
+### 10. Create New Staff (Admin only)
+POST {{baseUrl}}/api/staff
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Vijay Singh",
+  "email": "vijay@delivery.com",
+  "password": "vijay123"
+}
+
+### 11. Delete Staff (Admin only)
+DELETE {{baseUrl}}/api/staff/3
+Authorization: Bearer {{token}}
+
+### 12. Logout
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token}}
