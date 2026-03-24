@@ -4,16 +4,16 @@ const db = require('../config/database');
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
     }
 
     // Find user
     const [users] = await db.query(
-      'SELECT id, name, email, password, role FROM users WHERE email = ?',
-      [email]
+      'SELECT id, name, username, password, role FROM users WHERE username = ?',
+      [username]
     );
 
     if (users.length === 0) {
@@ -30,7 +30,7 @@ exports.login = async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
@@ -41,7 +41,7 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         role: user.role
       }
     });
