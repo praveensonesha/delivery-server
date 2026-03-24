@@ -3,8 +3,6 @@ const db = require('../config/database');
 exports.getDeliveries = async (req, res) => {
   try {
     const { status, date_from, date_to, staff_id } = req.query;
-    const userRole = req.user.role;
-    const userId = req.user.id;
 
     let query = `
       SELECT
@@ -17,18 +15,10 @@ exports.getDeliveries = async (req, res) => {
     `;
     const params = [];
 
-    // Staff can only see their own deliveries
-    if (userRole === 'staff') {
+    // All users see all deliveries; optional staff_id filter
+    if (staff_id) {
       query += ' AND d.staff_id = ?';
-      params.push(userId);
-    }
-
-    // Admin filters
-    if (userRole === 'admin') {
-      if (staff_id) {
-        query += ' AND d.staff_id = ?';
-        params.push(staff_id);
-      }
+      params.push(staff_id);
     }
 
     // Common filters
@@ -127,11 +117,6 @@ exports.getDeliveryById = async (req, res) => {
 
     const delivery = deliveries[0];
 
-    // Staff can only see their own deliveries
-    if (req.user.role === 'staff' && delivery.staff_id !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     // Get payment info if exists
     const [payments] = await db.query(
       `SELECT p.*, u.name as collected_by_name
@@ -167,11 +152,6 @@ exports.markAsPaid = async (req, res) => {
     }
 
     const delivery = deliveries[0];
-
-    // Staff can only mark their own deliveries
-    if (req.user.role === 'staff' && delivery.staff_id !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     if (delivery.status === 'paid') {
       return res.status(400).json({ error: 'Delivery already marked as paid' });
