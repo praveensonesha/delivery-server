@@ -1,5 +1,69 @@
 const db = require('../config/database');
 
+exports.getStats = async (req, res) => {
+  try {
+    // Today's stats
+    const [[today]] = await db.query(`
+      SELECT
+        COUNT(*) as count,
+        COALESCE(SUM(amount), 0) as amount
+      FROM deliveries
+      WHERE DATE(created_at) = CURDATE()
+    `);
+
+    // All-time totals split by status
+    const [[totals]] = await db.query(`
+      SELECT
+        COUNT(*) as total_count,
+        COALESCE(SUM(amount), 0) as total_amount,
+        COALESCE(SUM(CASE WHEN status = 'unpaid' THEN amount ELSE 0 END), 0) as pending_amount,
+        COALESCE(SUM(CASE WHEN status = 'paid'   THEN amount ELSE 0 END), 0) as collected_amount,
+        SUM(CASE WHEN status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count,
+        SUM(CASE WHEN status = 'paid'   THEN 1 ELSE 0 END) as paid_count
+      FROM deliveries
+    `);
+
+    // Last 7 days — day-wise breakdown
+    const [daily] = await db.query(`
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as count,
+        COALESCE(SUM(amount), 0) as amount,
+        COALESCE(SUM(CASE WHEN status = 'paid'   THEN amount ELSE 0 END), 0) as collected,
+        COALESCE(SUM(CASE WHEN status = 'unpaid' THEN amount ELSE 0 END), 0) as pending
+      FROM deliveries
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `);
+
+    res.json({
+      today: {
+        count:  parseInt(today.count),
+        amount: parseFloat(today.amount),
+      },
+      total: {
+        count:     parseInt(totals.total_count),
+        amount:    parseFloat(totals.total_amount),
+        unpaid_count: parseInt(totals.unpaid_count),
+        paid_count:   parseInt(totals.paid_count),
+      },
+      pending_amount:   parseFloat(totals.pending_amount),
+      collected_amount: parseFloat(totals.collected_amount),
+      daily_chart: daily.map(d => ({
+        date:      d.date,
+        count:     parseInt(d.count),
+        amount:    parseFloat(d.amount),
+        collected: parseFloat(d.collected),
+        pending:   parseFloat(d.pending),
+      })),
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 exports.getDeliveries = async (req, res) => {
   try {
     const { status, date_from, date_to, staff_id, keyword, page = 0, size = 20 } = req.query;

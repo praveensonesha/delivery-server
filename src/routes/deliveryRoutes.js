@@ -35,6 +35,7 @@ const upload = multer({
 // All delivery routes require authentication
 router.use(authenticate);
 
+router.get('/stats', deliveryController.getStats);
 router.get('/', deliveryController.getDeliveries);
 router.post('/', deliveryController.createDelivery);
 router.get('/:id', deliveryController.getDeliveryById);

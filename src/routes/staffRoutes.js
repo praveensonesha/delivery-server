@@ -8,6 +8,7 @@ router.use(authenticate, isAdmin);
 
 router.get('/', staffController.getAllStaff);
 router.post('/', staffController.createStaff);
+router.patch('/:id', staffController.updateStaff);
 router.delete('/:id', staffController.deleteStaff);
 
 module.exports = router;
