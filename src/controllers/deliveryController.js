@@ -2,45 +2,81 @@ const db = require('../config/database');
 
 exports.getDeliveries = async (req, res) => {
   try {
-    const { status, date_from, date_to, staff_id } = req.query;
+    const { status, date_from, date_to, staff_id, keyword, page = 0, size = 20 } = req.query;
 
-    let query = `
-      SELECT
-        d.*,
-        u.name as staff_name,
-        u.email as staff_email
-      FROM deliveries d
-      JOIN users u ON d.staff_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
+    const pageNum = parseInt(page) || 0;
+    const sizeNum = parseInt(size) || 20;
+    const offset  = pageNum * sizeNum;
 
-    // All users see all deliveries; optional staff_id filter
+    let whereClause = 'WHERE 1=1';
+    const filterParams = [];
+
     if (staff_id) {
-      query += ' AND d.staff_id = ?';
-      params.push(staff_id);
+      whereClause += ' AND d.staff_id = ?';
+      filterParams.push(staff_id);
     }
 
-    // Common filters
     if (status) {
-      query += ' AND d.status = ?';
-      params.push(status);
+      whereClause += ' AND d.status = ?';
+      filterParams.push(status);
     }
 
     if (date_from) {
-      query += ' AND DATE(d.created_at) >= ?';
-      params.push(date_from);
+      whereClause += ' AND DATE(d.created_at) >= ?';
+      filterParams.push(date_from);
     }
 
     if (date_to) {
-      query += ' AND DATE(d.created_at) <= ?';
-      params.push(date_to);
+      whereClause += ' AND DATE(d.created_at) <= ?';
+      filterParams.push(date_to);
     }
 
-    query += ' ORDER BY d.created_at DESC';
+    if (keyword && keyword.trim()) {
+      whereClause += ` AND (
+        d.building_name   LIKE ? OR
+        d.room_no         LIKE ? OR
+        d.customer_name   LIKE ? OR
+        d.customer_phone  LIKE ? OR
+        d.description     LIKE ? OR
+        u.name            LIKE ?
+      )`;
+      const kw = `%${keyword.trim()}%`;
+      filterParams.push(kw, kw, kw, kw, kw, kw);
+    }
 
-    const [deliveries] = await db.query(query, params);
-    res.json(deliveries);
+    // Paginated rows
+    const [deliveries] = await db.query(
+      `SELECT SQL_CALC_FOUND_ROWS
+         d.*,
+         u.name as staff_name
+       FROM deliveries d
+       JOIN users u ON d.staff_id = u.id
+       ${whereClause}
+       ORDER BY d.created_at DESC
+       LIMIT ?, ?`,
+      [...filterParams, offset, sizeNum]
+    );
+
+    // Total matching rows (ignores LIMIT)
+    const [[{ total }]] = await db.query('SELECT FOUND_ROWS() as total');
+
+    // Total amount across ALL matching rows (not just this page)
+    const [[{ total_amount }]] = await db.query(
+      `SELECT COALESCE(SUM(d.amount), 0) as total_amount
+       FROM deliveries d
+       JOIN users u ON d.staff_id = u.id
+       ${whereClause}`,
+      filterParams
+    );
+
+    res.json({
+      data:         deliveries,
+      total:        parseInt(total),
+      total_amount: parseFloat(total_amount),
+      page:         pageNum,
+      size:         sizeNum,
+      totalPages:   Math.ceil(total / sizeNum),
+    });
   } catch (error) {
     console.error('Get deliveries error:', error);
     res.status(500).json({ error: 'Server error' });
