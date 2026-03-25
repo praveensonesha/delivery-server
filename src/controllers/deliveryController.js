@@ -66,7 +66,13 @@ exports.getStats = async (req, res) => {
 
 exports.getDeliveries = async (req, res) => {
   try {
-    const { status, date_from, date_to, staff_id, keyword, page = 0, size = 20 } = req.query;
+    const {
+      status, staff_id, keyword, page = 0, size = 20,
+      date_from, date_to,         // mobile app param names
+      start_date, end_date,       // dashboard param names
+    } = req.query;
+    const fromDate = date_from || start_date;
+    const toDate   = date_to   || end_date;
 
     const pageNum = parseInt(page) || 0;
     const sizeNum = parseInt(size) || 20;
@@ -85,14 +91,14 @@ exports.getDeliveries = async (req, res) => {
       filterParams.push(status);
     }
 
-    if (date_from) {
+    if (fromDate) {
       whereClause += ' AND DATE(d.created_at) >= ?';
-      filterParams.push(date_from);
+      filterParams.push(fromDate);
     }
 
-    if (date_to) {
+    if (toDate) {
       whereClause += ' AND DATE(d.created_at) <= ?';
-      filterParams.push(date_to);
+      filterParams.push(toDate);
     }
 
     if (keyword && keyword.trim()) {
