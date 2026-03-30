@@ -15,6 +15,7 @@ const keepServerActive = async () => {
   }
 };
 
+
 // Schedule the cron job to run every 10 minutes
 cron.schedule('*/10 * * * *', () => {
   console.log('Pinging Render server...');
